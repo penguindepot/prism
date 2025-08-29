@@ -4,6 +4,7 @@
 
 PRISM is a package manager specifically designed for Claude Code extensions, making it easy to distribute, install, and manage command packages. Think `npm` for Claude Code commands.
 
+[![npm version](https://img.shields.io/npm/v/prism-claude.svg)](https://www.npmjs.com/package/prism-claude)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🚀 Quick Start
