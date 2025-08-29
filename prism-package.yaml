@@ -1,0 +1,21 @@
+name: current-package
+version: 1.0.0
+description: Test package
+author: Test Suite
+license: MIT
+
+claudeCode:
+  minVersion: "1.0.0"
+
+structure:
+  commands:
+    - source: commands/
+      dest: .claude/commands/{name}/
+  scripts:
+    - source: scripts/
+      dest: .claude/scripts/{name}/
+
+variants:
+  default:
+    description: Default installation
+    include: ["**/*"]
