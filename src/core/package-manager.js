@@ -1,14 +1,14 @@
-const fs = require('fs-extra');
-const path = require('path');
-const { execSync } = require('child_process');
-const chalk = require('chalk');
-const semver = require('semver');
-const fetch = require('node-fetch');
+import fs from 'fs-extra';
+import path from 'path';
+import { execSync } from 'child_process';
+import chalk from 'chalk';
+import semver from 'semver';
+import fetch from 'node-fetch';
 
-const ManifestParser = require('./manifest-parser');
-const FileManager = require('./file-manager');
-const { PrismError, ValidationError } = require('../utils/errors');
-const logger = require('../utils/logger');
+import ManifestParser from './manifest-parser.js';
+import FileManager from './file-manager.js';
+import { PrismError, ValidationError } from '../utils/errors.js';
+import logger from '../utils/logger.js';
 
 class PackageManager {
   constructor(projectRoot = process.cwd()) {
@@ -40,11 +40,29 @@ class PackageManager {
       await this.ensurePrismStructure();
       await this.ensureClaudeStructure();
 
+      // Preserve existing packages if force re-initializing
+      let existingPackages = {};
+      if (options.force && await fs.pathExists(this.configPath)) {
+        try {
+          const existingConfig = await fs.readJson(this.configPath);
+          existingPackages = existingConfig.packages || {};
+        } catch (error) {
+          // Ignore errors reading existing config
+        }
+      }
+
       // Create initial config
       const config = {
         version: '1.0.0',
-        packages: {},
+        packages: existingPackages,
         registry: process.env.PRISM_REGISTRY || 'https://registry.prism-claude.io',
+        config: {
+          defaultVariant: 'standard',
+          autoUpdate: false,
+          verbose: false,
+          confirmUninstall: true,
+          keepBackups: true
+        },
         initialized: new Date().toISOString()
       };
 
@@ -517,4 +535,4 @@ class PackageManager {
   }
 }
 
-module.exports = PackageManager;
+export default PackageManager;

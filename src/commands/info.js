@@ -1,6 +1,6 @@
-const PackageManager = require('../core/package-manager');
-const logger = require('../utils/logger');
-const chalk = require('chalk');
+import PackageManager from '../core/package-manager.js';
+import logger from '../utils/logger.js';
+import chalk from 'chalk';
 
 async function info(packageSpec, options) {
   try {
@@ -188,4 +188,4 @@ async function info(packageSpec, options) {
   }
 }
 
-module.exports = info;
+export default info;

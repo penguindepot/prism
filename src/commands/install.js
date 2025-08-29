@@ -1,6 +1,6 @@
-const inquirer = require('inquirer');
-const PackageManager = require('../core/package-manager');
-const logger = require('../utils/logger');
+import inquirer from 'inquirer';
+import PackageManager from '../core/package-manager.js';
+import logger from '../utils/logger.js';
 
 async function install(packageSpec, options) {
   try {
@@ -89,4 +89,4 @@ async function install(packageSpec, options) {
   }
 }
 
-module.exports = install;
+export default install;

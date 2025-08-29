@@ -1,6 +1,6 @@
-const PackageManager = require('../core/package-manager');
-const logger = require('../utils/logger');
-const chalk = require('chalk');
+import PackageManager from '../core/package-manager.js';
+import logger from '../utils/logger.js';
+import chalk from 'chalk';
 
 async function list(options) {
   try {
@@ -94,4 +94,4 @@ async function list(options) {
   }
 }
 
-module.exports = list;
+export default list;

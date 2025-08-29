@@ -1,5 +1,5 @@
-const PackageManager = require('../core/package-manager');
-const logger = require('../utils/logger');
+import PackageManager from '../core/package-manager.js';
+import logger from '../utils/logger.js';
 
 async function init(options) {
   try {
@@ -30,8 +30,8 @@ async function init(options) {
     if (error.code === 'PRISM_ERROR' && !options.force) {
       logger.info('💡 Use --force to reinitialize an existing PRISM project');
     }
-    process.exit(1);
+    throw error;
   }
 }
 
-module.exports = init;
+export default init;

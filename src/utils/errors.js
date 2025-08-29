@@ -34,7 +34,7 @@ class ConflictError extends PrismError {
   }
 }
 
-module.exports = {
+export {
   PrismError,
   ValidationError,
   NetworkError,

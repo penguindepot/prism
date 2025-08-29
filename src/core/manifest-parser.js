@@ -1,7 +1,7 @@
-const fs = require('fs-extra');
-const YAML = require('yaml');
-const semver = require('semver');
-const { ValidationError } = require('../utils/errors');
+import fs from 'fs-extra';
+import YAML from 'yaml';
+import semver from 'semver';
+import { ValidationError } from '../utils/errors.js';
 
 class ManifestParser {
   /**
@@ -91,23 +91,19 @@ class ManifestParser {
    * Validate a complete manifest
    */
   validate(manifest) {
-    try {
-      // Basic structure validation
-      this.validateStructure(manifest);
-      
-      // Validate variants
-      this.validateVariants(manifest);
-      
-      // Validate dependencies
-      this.validateDependencies(manifest);
-      
-      // Validate hooks
-      this.validateHooks(manifest);
-      
-      return true;
-    } catch (error) {
-      throw new ValidationError(`Manifest validation failed: ${error.message}`);
-    }
+    // Basic structure validation
+    this.validateStructure(manifest);
+    
+    // Validate variants
+    this.validateVariants(manifest.variants);
+    
+    // Validate dependencies
+    this.validateDependencies(manifest.dependencies);
+    
+    // Validate hooks
+    this.validateHooks(manifest.hooks);
+    
+    return true;
   }
 
   // Private normalization methods
@@ -263,10 +259,8 @@ class ManifestParser {
     }
   }
 
-  validateVariants(manifest) {
-    const variants = manifest.variants;
-    
-    if (Object.keys(variants).length === 0) {
+  validateVariants(variants) {
+    if (!variants || Object.keys(variants).length === 0) {
       return; // Default variant will be created
     }
     
@@ -290,8 +284,10 @@ class ManifestParser {
     }
   }
 
-  validateDependencies(manifest) {
-    const deps = manifest.dependencies;
+  validateDependencies(deps) {
+    if (!deps) {
+      return; // No dependencies to validate
+    }
     
     if (deps.system) {
       for (const dep of deps.system) {
@@ -318,8 +314,10 @@ class ManifestParser {
     }
   }
 
-  validateHooks(manifest) {
-    const hooks = manifest.hooks;
+  validateHooks(hooks) {
+    if (!hooks) {
+      return; // No hooks to validate
+    }
     
     for (const [name, script] of Object.entries(hooks)) {
       if (!script || typeof script !== 'string') {
@@ -331,6 +329,28 @@ class ManifestParser {
         throw new ValidationError(`Hook ${name} contains dangerous command: rm -rf /`);
       }
     }
+  }
+
+  /**
+   * Resolve a variant from manifest
+   */
+  resolveVariant(manifest, variantName) {
+    if (!manifest.variants || Object.keys(manifest.variants).length === 0) {
+      return {
+        description: 'Default installation',
+        include: ['**/*'],
+        exclude: []
+      };
+    }
+    
+    const variant = manifest.variants[variantName];
+    if (variant) {
+      return variant;
+    }
+    
+    // Return first variant as default
+    const firstVariantName = Object.keys(manifest.variants)[0];
+    return manifest.variants[firstVariantName];
   }
 
   /**
@@ -394,4 +414,4 @@ class ManifestParser {
   }
 }
 
-module.exports = ManifestParser;
+export default ManifestParser;

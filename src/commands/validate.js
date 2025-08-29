@@ -1,12 +1,12 @@
-const path = require('path');
-const fs = require('fs-extra');
-const inquirer = require('inquirer');
-const ManifestParser = require('../core/manifest-parser');
-const FileManager = require('../core/file-manager');
-const logger = require('../utils/logger');
-const chalk = require('chalk');
+import path from 'path';
+import fs from 'fs-extra';
+import inquirer from 'inquirer';
+import ManifestParser from '../core/manifest-parser.js';
+import FileManager from '../core/file-manager.js';
+import logger from '../utils/logger.js';
+import chalk from 'chalk';
 
-async function validate(directory, options) {
+async function validate(directory, options = {}) {
   try {
     const sourceDir = directory ? path.resolve(directory) : process.cwd();
     
@@ -15,7 +15,7 @@ async function validate(directory, options) {
     // Check if directory exists
     if (!await fs.pathExists(sourceDir)) {
       logger.error(`❌ Directory not found: ${sourceDir}`);
-      process.exit(1);
+      throw new Error(`Directory not found: ${sourceDir}`);
     }
 
     const manifestPath = path.join(sourceDir, 'prism-package.yaml');
@@ -28,7 +28,7 @@ async function validate(directory, options) {
       
       logger.error('❌ No prism-package.yaml found');
       logger.info('💡 Create a manifest with: prism validate --init');
-      process.exit(1);
+      throw new Error('Manifest file not found');
     }
 
     // Validation steps
@@ -56,12 +56,13 @@ async function validate(directory, options) {
       validationResults.manifestParsing = true;
     } catch (error) {
       parseSpinner.fail('Manifest parsing: ❌ FAILED');
-      logger.error(`  ${error.message}`);
+      logger.error(`  Failed to parse manifest: ${error.message}`);
       
       if (!options.strict) {
         logger.info('  Continuing with remaining checks...');
         manifest = null;
       } else {
+        logger.error(`❌ Validation failed: Failed to parse manifest: ${error.message}`);
         throw error;
       }
     }
@@ -82,6 +83,7 @@ async function validate(directory, options) {
         logger.error(`  ${error.message}`);
         
         if (options.strict) {
+          logger.error(`❌ Validation failed: ${error.message}`);
           throw error;
         }
       }
@@ -103,6 +105,7 @@ async function validate(directory, options) {
         logger.error(`  ${error.message}`);
         
         if (options.strict) {
+          logger.error(`❌ Validation failed: ${error.message}`);
           throw error;
         }
       }
@@ -186,6 +189,10 @@ async function validate(directory, options) {
       
       logger.info(`❌ Failed: ${failedChecks.join(', ')}`);
       logger.info('💡 Fix the issues above and run validation again');
+
+      if (options.strict) {
+        throw new Error(`Validation failed: ${failedChecks.join(', ')}`);
+      }
     }
 
     // Show detailed package info if validation passed
@@ -200,7 +207,7 @@ async function validate(directory, options) {
       logger.error(error.stack);
     }
     
-    process.exit(1);
+    throw error;
   }
 }
 
@@ -377,4 +384,4 @@ function showDetailedPackageInfo(manifest) {
   }
 }
 
-module.exports = validate;
+export default validate;

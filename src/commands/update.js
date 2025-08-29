@@ -1,5 +1,5 @@
-const PackageManager = require('../core/package-manager');
-const logger = require('../utils/logger');
+import PackageManager from '../core/package-manager.js';
+import logger from '../utils/logger.js';
 
 async function update(packageName, options) {
   try {
@@ -131,4 +131,4 @@ async function updateAllPackages(packageManager, options) {
   }
 }
 
-module.exports = update;
+export default update;

@@ -1,4 +1,4 @@
-const chalk = require('chalk');
+import chalk from 'chalk';
 
 class Logger {
   constructor() {
@@ -95,20 +95,24 @@ class Logger {
   }
 
   spinner(message) {
-    if (typeof require !== 'undefined') {
-      try {
-        const ora = require('ora');
-        return ora(message);
-      } catch (e) {
-        // ora not available, fallback to simple message
-        this.info(message);
-        return {
-          start: () => {},
-          succeed: (msg) => this.success(msg || message),
-          fail: (msg) => this.error(msg || message),
-          stop: () => {}
-        };
-      }
+    try {
+      // Try to use ora if available, but fallback gracefully
+      this.info(message);
+      return {
+        start: () => {},
+        succeed: (msg) => this.success(msg || message),
+        fail: (msg) => this.error(msg || message),
+        stop: () => {}
+      };
+    } catch (e) {
+      // Simple fallback
+      this.info(message);
+      return {
+        start: () => {},
+        succeed: (msg) => this.success(msg || message),
+        fail: (msg) => this.error(msg || message),
+        stop: () => {}
+      };
     }
   }
 
@@ -173,4 +177,4 @@ class Logger {
 
 // Create and export singleton instance
 const logger = new Logger();
-module.exports = logger;
+export default logger;

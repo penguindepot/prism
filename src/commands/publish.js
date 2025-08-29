@@ -1,7 +1,7 @@
-const path = require('path');
-const fs = require('fs-extra');
-const ManifestParser = require('../core/manifest-parser');
-const logger = require('../utils/logger');
+import path from 'path';
+import fs from 'fs-extra';
+import ManifestParser from '../core/manifest-parser.js';
+import logger from '../utils/logger.js';
 
 async function publish(packageFile, options) {
   try {
@@ -107,4 +107,4 @@ function formatFileSize(bytes) {
   return `${size.toFixed(unitIndex > 0 ? 1 : 0)} ${units[unitIndex]}`;
 }
 
-module.exports = publish;
+export default publish;
