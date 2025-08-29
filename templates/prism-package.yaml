@@ -1,0 +1,111 @@
+name: my-extension
+version: 1.0.0
+description: My Claude Code extension
+author: Your Name
+license: MIT
+repository: github.com/user/repo
+homepage: https://github.com/user/repo
+keywords:
+  - claude-code
+  - extension
+  - productivity
+
+# Claude Code compatibility
+claudeCode:
+  minVersion: "1.0.0"
+  maxVersion: "2.x"
+
+# Package file structure
+structure:
+  commands:
+    - source: commands/
+      dest: .claude/commands/{name}/
+      pattern: "**/*.md"
+      exclude: ["**/README.md"]
+  
+  scripts:
+    - source: scripts/
+      dest: .claude/scripts/{name}/
+      pattern: "**/*.sh"
+  
+  rules:
+    - source: rules/
+      dest: .claude/rules/
+      pattern: "*.md"
+  
+  data:
+    - source: templates/
+      dest: .{name}/templates/
+      pattern: "**/*"
+
+# Installation variants
+variants:
+  minimal:
+    description: Core functionality only
+    include:
+      - "commands/core/*"
+    exclude: []
+  
+  standard:
+    description: Recommended features
+    include:
+      - "commands/*"
+      - "scripts/core/*"
+    exclude:
+      - "commands/experimental/*"
+  
+  full:
+    description: All features including experimental
+    include:
+      - "**/*"
+    exclude: []
+
+# Dependencies
+dependencies:
+  system:
+    - name: git
+      required: true
+      version: ">=2.0.0"
+    
+    - name: yq
+      required: false
+      install: "brew install yq || apt-get install yq"
+    
+    - name: jq
+      required: false
+      install: "brew install jq || apt-get install jq"
+  
+  prism:
+    base-utils: ">=1.0.0"
+
+# Lifecycle hooks
+hooks:
+  preInstall: |
+    echo "Preparing to install {name}..."
+  
+  postInstall: |
+    mkdir -p .{name}/data .{name}/config
+    echo "✅ {name} installed successfully!"
+    echo "📝 Run /{name}:init to get started"
+  
+  preUninstall: |
+    echo "Backing up {name} configuration..."
+    if [ -d ".{name}" ]; then
+      cp -r .{name} .{name}.backup
+    fi
+  
+  postUninstall: |
+    echo "🗑️  {name} has been removed"
+    echo "💾 Configuration backed up to .{name}.backup"
+
+# Files to ignore when packaging
+ignore:
+  - node_modules
+  - .git
+  - .DS_Store
+  - "*.log"
+  - .env
+  - .env.local
+  - dist/
+  - build/
+  - coverage/

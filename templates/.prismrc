@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "registry": "https://registry.prism-claude.io",
+  "packages": {},
+  "config": {
+    "autoUpdate": false,
+    "verbose": false,
+    "confirmUninstall": true,
+    "keepBackups": true,
+    "defaultVariant": "standard"
+  },
+  "cache": {
+    "enabled": true,
+    "ttl": 3600000,
+    "maxSize": "100MB"
+  }
+}

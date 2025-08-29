@@ -1,0 +1,142 @@
+#!/usr/bin/env node
+
+const { Command } = require('commander');
+const chalk = require('chalk');
+const packageJson = require('../package.json');
+
+// Import command handlers
+const init = require('../src/commands/init');
+const install = require('../src/commands/install');
+const uninstall = require('../src/commands/uninstall');
+const update = require('../src/commands/update');
+const list = require('../src/commands/list');
+const info = require('../src/commands/info');
+const packageCmd = require('../src/commands/package');
+const validate = require('../src/commands/validate');
+const publish = require('../src/commands/publish');
+
+const program = new Command();
+
+program
+  .name('prism')
+  .description('Package Registry & Installation System Manager for Claude Code extensions')
+  .version(packageJson.version);
+
+// Add global options
+program
+  .option('-v, --verbose', 'verbose output')
+  .option('--no-color', 'disable colored output')
+  .option('--registry <url>', 'use custom registry URL');
+
+// Command: prism init
+program
+  .command('init')
+  .description('Initialize PRISM in current project')
+  .option('--force', 'force initialization even if already exists')
+  .action(init);
+
+// Command: prism install <package>
+program
+  .command('install [package]')
+  .alias('i')
+  .description('Install a Claude Code extension package')
+  .option('--variant <variant>', 'specify installation variant (minimal, standard, full)')
+  .option('--save', 'save to project dependencies')
+  .option('--global', 'install globally')
+  .option('--dry-run', 'show what would be installed without doing it')
+  .action(install);
+
+// Command: prism uninstall <package>
+program
+  .command('uninstall <package>')
+  .alias('remove')
+  .description('Remove an installed package')
+  .option('--keep-data', 'keep package data files')
+  .action(uninstall);
+
+// Command: prism update [package]
+program
+  .command('update [package]')
+  .description('Update package(s) to latest version')
+  .option('--all', 'update all packages')
+  .option('--check-only', 'only check for updates without installing')
+  .action(update);
+
+// Command: prism list
+program
+  .command('list')
+  .alias('ls')
+  .description('List installed packages')
+  .option('--global', 'list globally installed packages')
+  .option('--outdated', 'show outdated packages')
+  .action(list);
+
+// Command: prism info <package>
+program
+  .command('info <package>')
+  .description('Show package information')
+  .option('--versions', 'show all available versions')
+  .action(info);
+
+// Command: prism package [directory]
+program
+  .command('package [directory]')
+  .description('Create a package from current directory or specified directory')
+  .option('--output <file>', 'output filename')
+  .option('--include <pattern>', 'include additional files')
+  .option('--exclude <pattern>', 'exclude files')
+  .action(packageCmd);
+
+// Command: prism validate [directory]
+program
+  .command('validate [directory]')
+  .description('Validate package structure and manifest')
+  .option('--strict', 'strict validation mode')
+  .action(validate);
+
+// Command: prism publish [package]
+program
+  .command('publish [package]')
+  .description('Publish package to registry')
+  .option('--registry <url>', 'publish to specific registry')
+  .option('--tag <tag>', 'publish with tag (beta, latest, etc.)')
+  .action(publish);
+
+// Command: prism search <query>
+program
+  .command('search <query>')
+  .description('Search packages in registry')
+  .option('--limit <number>', 'limit number of results')
+  .action((query, options) => {
+    console.log(chalk.yellow('🚧 Search functionality coming soon!'));
+    console.log(`Would search for: "${query}"`);
+  });
+
+// Handle unknown commands
+program.on('command:*', (operands) => {
+  console.error(chalk.red(`Unknown command: ${operands[0]}`));
+  console.log(chalk.gray('Run "prism --help" to see available commands.'));
+  process.exitCode = 1;
+});
+
+// Global error handler
+process.on('uncaughtException', (error) => {
+  console.error(chalk.red('💥 Uncaught Exception:'), error.message);
+  if (program.opts().verbose) {
+    console.error(error.stack);
+  }
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error(chalk.red('💥 Unhandled Promise Rejection:'), reason);
+  process.exit(1);
+});
+
+// Parse command line arguments
+program.parse(process.argv);
+
+// Show help if no command provided
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+}

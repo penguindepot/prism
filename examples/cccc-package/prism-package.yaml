@@ -1,0 +1,206 @@
+name: cccc
+version: 1.0.0
+description: Claude Code Command Center - Complete command and context management system
+author: CCCC Contributors
+license: MIT
+repository: github.com/penguindepot/cccc
+homepage: https://github.com/penguindepot/cccc
+keywords:
+  - claude-code
+  - context-management
+  - prd-workflow
+  - gitlab-integration
+  - productivity
+  - automation
+
+# Claude Code compatibility
+claudeCode:
+  minVersion: "1.0.0"
+
+# Package file structure
+structure:
+  commands:
+    - source: .claude/commands/cccc/
+      dest: .claude/commands/cccc/
+      pattern: "**/*.md"
+    
+    - source: .claude/commands/context/
+      dest: .claude/commands/context/
+      pattern: "**/*.md"
+    
+    - source: .claude/commands/utils/
+      dest: .claude/commands/utils/
+      pattern: "**/*.md"
+  
+  scripts:
+    - source: .claude/scripts/cccc/
+      dest: .claude/scripts/cccc/
+      pattern: "**/*.sh"
+    
+    - source: .claude/scripts/utils/
+      dest: .claude/scripts/utils/
+      pattern: "**/*.sh"
+  
+  rules:
+    - source: .claude/rules/
+      dest: .claude/rules/
+      pattern: "*.md"
+  
+  templates:
+    - source: templates/context/
+      dest: .cccc/templates/context/
+      pattern: "*.md"
+    
+    - source: templates/prds/
+      dest: .cccc/templates/prds/
+      pattern: "*.md"
+
+# Installation variants
+variants:
+  minimal:
+    description: Essential context management only (10 commands)
+    include:
+      - ".claude/commands/context/*"
+      - ".claude/commands/cccc/init.md"
+      - ".claude/scripts/cccc/init.sh"
+      - "templates/context/*"
+    exclude:
+      - ".claude/commands/cccc/epic/*"
+      - ".claude/commands/cccc/mr/*"
+      - ".claude/commands/cccc/issue/*"
+  
+  standard:
+    description: Full workflows including PRD and Epic management (25 commands)
+    include:
+      - ".claude/commands/context/*"
+      - ".claude/commands/cccc/init.md"
+      - ".claude/commands/cccc/prd/*"
+      - ".claude/commands/cccc/epic/analyze.md"
+      - ".claude/commands/cccc/epic/decompose.md"
+      - ".claude/commands/cccc/epic/sync.md"
+      - ".claude/scripts/cccc/*"
+      - "templates/*"
+    exclude:
+      - ".claude/commands/cccc/mr/*"
+      - ".claude/commands/cccc/issue/mr.md"
+  
+  full:
+    description: Complete system with MR workflows and GitLab/GitHub integration (40+ commands)
+    include:
+      - "**/*"
+    exclude: []
+
+# Dependencies
+dependencies:
+  system:
+    - name: git
+      required: true
+      version: ">=2.0.0"
+    
+    - name: yq
+      required: false
+      install: "brew install yq || apt-get install yq"
+      description: "YAML processing for analysis files"
+    
+    - name: jq
+      required: false
+      install: "brew install jq || apt-get install jq"
+      description: "JSON processing for CLI output"
+    
+    - name: gh
+      required: false
+      install: "brew install gh || curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /usr/share/keyrings/githubcli-archive-keyring.gpg"
+      description: "GitHub CLI for GitHub integration"
+    
+    - name: glab
+      required: false
+      install: "brew install glab || curl -s https://api.gitlab.com/v4/projects/34675721/packages/generic/glab/v1.25.3/glab_1.25.3_Linux_x86_64.tar.gz"
+      description: "GitLab CLI for GitLab integration"
+
+# Lifecycle hooks
+hooks:
+  preInstall: |
+    echo "🚀 Preparing CCCC installation..."
+    echo "📦 Variant: ${PRISM_VARIANT:-standard}"
+  
+  postInstall: |
+    # Create CCCC directory structure
+    mkdir -p .cccc/context .cccc/prds .cccc/epics .cccc_frozen
+    
+    # Create configuration file
+    cat > .cccc/cccc-config.yml << EOF
+    # CCCC System Configuration
+    git_platform: auto-detect
+    git_remote: origin
+    initialized_date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    prism_installed: true
+    prism_variant: ${PRISM_VARIANT:-standard}
+    EOF
+    
+    echo "✅ CCCC installed successfully!"
+    echo ""
+    echo "📋 Available commands based on your variant (${PRISM_VARIANT:-standard}):"
+    
+    if [ "${PRISM_VARIANT}" = "minimal" ]; then
+      echo "  Context Management:"
+      echo "    /context:create  - Create project context"
+      echo "    /context:prime   - Load context for session"
+      echo "    /context:update  - Update context"
+      echo "    /cccc:init       - Initialize CCCC system"
+    elif [ "${PRISM_VARIANT}" = "standard" ]; then
+      echo "  Context Management:"
+      echo "    /context:create, /context:prime, /context:update"
+      echo "  PRD Workflow:"
+      echo "    /cccc:prd:new, /cccc:prd:parse"
+      echo "  Epic Management:"
+      echo "    /cccc:epic:analyze, /cccc:epic:sync"
+      echo "  System:"
+      echo "    /cccc:init - Initialize CCCC system"
+    else
+      echo "  🎯 Full CCCC System - All 40+ commands available!"
+      echo "  Run /cccc:init to see complete command list"
+    fi
+    
+    echo ""
+    echo "🎯 Next steps:"
+    echo "  1. Run /cccc:init to initialize the system"
+    echo "  2. Choose your git platform (GitHub/GitLab)"
+    echo "  3. Run /context:create to set up project context"
+    echo ""
+    echo "📚 Documentation: https://github.com/penguindepot/cccc"
+  
+  preUninstall: |
+    echo "🗑️ Preparing to uninstall CCCC..."
+    
+    # Backup configuration and data
+    if [ -d ".cccc" ]; then
+      echo "💾 Backing up CCCC data to .cccc.backup..."
+      cp -r .cccc .cccc.backup
+    fi
+    
+    # Check for active work
+    if [ -d "../epic-"* ] 2>/dev/null; then
+      echo "⚠️  Warning: Found active epic worktrees"
+      echo "   You may want to clean these up manually"
+    fi
+  
+  postUninstall: |
+    echo "✅ CCCC has been uninstalled"
+    echo "💾 Your data has been backed up to .cccc.backup"
+    echo ""
+    echo "🧹 Manual cleanup (optional):"
+    echo "  rm -rf .cccc.backup      # Remove backup"
+    echo "  rm -rf ../epic-*         # Remove epic worktrees"
+    echo ""
+    echo "Thank you for using CCCC! 🚀"
+
+# Files to ignore when packaging
+ignore:
+  - node_modules
+  - .git
+  - .DS_Store
+  - "*.log"
+  - .env
+  - .cccc_frozen
+  - "../epic-*"
+  - .prism

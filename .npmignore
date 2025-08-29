@@ -1,0 +1,40 @@
+# Test files
+test/
+*.test.js
+*.spec.js
+
+# Documentation source
+docs/
+*.md
+!README.md
+
+# Development files
+.eslintrc.js
+.prettierrc
+.editorconfig
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Examples and templates (keep in package)
+# examples/
+# templates/
+
+# Source maps
+*.map
+
+# Coverage
+coverage/
+.nyc_output
+
+# Logs
+*.log
+
+# Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

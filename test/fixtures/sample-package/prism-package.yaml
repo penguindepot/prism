@@ -1,0 +1,27 @@
+name: sample-extension
+version: 1.0.0
+description: Sample Claude Code extension for testing PRISM
+author: PRISM Test Suite
+license: MIT
+
+claudeCode:
+  minVersion: "1.0.0"
+
+structure:
+  commands:
+    - source: commands/
+      dest: .claude/commands/{name}/
+
+variants:
+  default:
+    description: Default installation
+    include: ["**/*"]
+
+dependencies:
+  system:
+    - name: git
+      required: true
+
+hooks:
+  postInstall: |
+    echo "✅ Sample extension installed!"
