@@ -1,6 +1,6 @@
 {
   "name": "prism-claude",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Package Registry & Installation System Manager for Claude Code extensions",
   "keywords": ["claude-code", "package-manager", "cli", "extensions"],
   "author": "penguindepot",

@@ -256,16 +256,20 @@ PRISM creates a `.prism/config.json` file in each project:
 
 ## 🚧 Coming Soon
 
-### Central Registry
-- `prism search <query>` - Search for packages
-- `prism publish` - Publish to registry
-- Version management and updates
+### MCP Integration
+- Native support for Model Context Protocol (MCP) servers
+- Seamless integration with MCP-based workflows
+- MCP server package distribution and management
+
+### Specialized Agent Support
+- Pre-configured agent workflows and templates
+- Agent-specific command packages
+- Workflow automation for common AI development patterns
 
 ### Enhanced Features
-- Package dependencies
-- Workspace support
-- Lock files
-- Security scanning
+- Package dependencies and conflict resolution
+- Workspace support for multi-project setups
+- Advanced validation and security scanning
 
 ## 🤝 Contributing
 
@@ -329,4 +333,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Made with ❤️ for the Claude Code community**
 
-[Get Started](https://github.com/penguindepot/prism#quick-start) • [Documentation](https://github.com/penguindepot/prism/tree/main/examples) • [Examples](https://github.com/penguindepot/prism/tree/main/examples) • [Community](https://github.com/penguindepot/prism/discussions)
+[Get Started](https://github.com/penguindepot/prism#quick-start) • [Documentation](https://github.com/penguindepot/prism/tree/main/examples) • [Examples](https://github.com/penguindepot/prism/tree/main/examples) 
