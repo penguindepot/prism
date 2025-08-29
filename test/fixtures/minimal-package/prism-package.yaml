@@ -1,0 +1,13 @@
+name: minimal-test-package
+version: 1.0.0
+description: Minimal test package with just the required fields
+author: Test Suite
+license: MIT
+
+claudeCode:
+  minVersion: "1.0.0"
+
+structure:
+  commands:
+    - source: commands/
+      dest: .claude/commands/{name}/

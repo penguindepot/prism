@@ -1,0 +1,13 @@
+name: invalid-test-package
+version: not-a-valid-version
+description: This package has an invalid version for testing validation
+author: Test Suite
+license: MIT
+
+claudeCode:
+  minVersion: "invalid-version-here"
+
+structure:
+  commands:
+    - source: non-existent-directory/
+      dest: .claude/commands/{name}/

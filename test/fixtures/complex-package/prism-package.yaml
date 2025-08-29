@@ -1,0 +1,211 @@
+name: complex-test-package
+version: 2.1.0
+description: Complex test package with all features for comprehensive testing
+author: PRISM Test Suite
+license: MIT
+repository: github.com/test/complex-package
+homepage: https://github.com/test/complex-package
+keywords:
+  - test
+  - complex
+  - full-featured
+  - example
+
+claudeCode:
+  minVersion: "1.0.0"
+  maxVersion: "3.0.0"
+
+structure:
+  commands:
+    - source: commands/
+      dest: .claude/commands/{name}/
+      pattern: "**/*.md"
+      exclude: ["**/private.md", "**/internal/*"]
+  
+  scripts:
+    - source: scripts/
+      dest: .claude/scripts/{name}/
+      pattern: "**/*.sh"
+  
+  rules:
+    - source: rules/
+      dest: .claude/rules/
+      pattern: "*.md"
+  
+  templates:
+    - source: templates/
+      dest: .{name}/templates/
+      pattern: "**/*"
+
+variants:
+  minimal:
+    description: Minimal installation with core features only
+    include: 
+      - "commands/core/*"
+      - "scripts/essential/*"
+    exclude: 
+      - "commands/experimental/*"
+      - "scripts/advanced/*"
+      - "templates/optional/*"
+  
+  standard:
+    description: Standard installation with most features
+    include:
+      - "commands/*"
+      - "scripts/*"
+      - "rules/basic/*"
+      - "templates/standard/*"
+    exclude:
+      - "commands/experimental/*"
+      - "scripts/experimental/*"
+      - "templates/advanced/*"
+  
+  full:
+    description: Full installation with all features including experimental
+    include:
+      - "**/*"
+    exclude: []
+
+dependencies:
+  system:
+    - name: git
+      required: true
+      version: ">=2.0.0"
+      description: "Git version control system"
+    
+    - name: yq
+      required: false
+      install: "brew install yq || apt-get install yq"
+      description: "YAML processing utility for advanced features"
+    
+    - name: jq
+      required: false
+      install: "brew install jq || apt-get install jq"
+      description: "JSON processing utility"
+      
+    - name: curl
+      required: true
+      description: "HTTP client for downloading resources"
+  
+  prism:
+    base-utils: ">=1.0.0"
+    dev-tools: "^2.0.0"
+
+hooks:
+  preInstall: |
+    echo "🚀 Preparing complex package installation..."
+    echo "📦 Variant: ${PRISM_VARIANT:-standard}"
+    echo "📍 Target: $(pwd)"
+  
+  postInstall: |
+    # Create complex directory structure
+    mkdir -p .{name}/{{config,data,cache,logs}}
+    mkdir -p .{name}/templates/{{user,system,custom}}
+    
+    # Create configuration file
+    cat > .{name}/config/settings.yml << EOF
+    # Complex Package Configuration
+    package:
+      name: {name}
+      version: {version}
+      variant: \${PRISM_VARIANT:-standard}
+      installed_at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    
+    features:
+      experimental: \$([ "\${PRISM_VARIANT}" = "full" ] && echo "true" || echo "false")
+      advanced_rules: \$([ "\${PRISM_VARIANT}" != "minimal" ] && echo "true" || echo "false")
+    
+    paths:
+      config: .{name}/config
+      data: .{name}/data  
+      cache: .{name}/cache
+      logs: .{name}/logs
+      templates: .{name}/templates
+    EOF
+    
+    # Set up logging
+    echo "$(date): Complex package installed successfully" > .{name}/logs/install.log
+    
+    # Create default templates based on variant
+    if [ "\${PRISM_VARIANT}" = "full" ]; then
+      echo "Advanced template content" > .{name}/templates/advanced.template
+    fi
+    
+    if [ "\${PRISM_VARIANT}" != "minimal" ]; then
+      echo "Standard template content" > .{name}/templates/standard.template
+    fi
+    
+    echo "Core template content" > .{name}/templates/core.template
+    
+    echo "✅ Complex package installed successfully!"
+    echo ""
+    echo "📋 Installation Summary:"
+    echo "  📦 Package: {name} v{version}"
+    echo "  🎯 Variant: \${PRISM_VARIANT:-standard}"
+    echo "  📁 Config: .{name}/config/settings.yml"
+    echo "  📝 Logs: .{name}/logs/install.log"
+    echo ""
+    echo "🎯 Next Steps:"
+    echo "  1. Review configuration: cat .{name}/config/settings.yml"
+    echo "  2. Run package initialization: /{name}:init"
+    echo "  3. Explore available commands: /{name}:help"
+    echo ""
+    echo "📚 Documentation: https://github.com/test/complex-package"
+  
+  preUninstall: |
+    echo "🗑️ Preparing to uninstall complex package..."
+    
+    # Backup user data
+    if [ -d ".{name}" ]; then
+      echo "💾 Backing up package data..."
+      
+      # Create timestamped backup
+      backup_dir=".{name}.backup.$(date +%Y%m%d-%H%M%S)"
+      cp -r .{name} "\$backup_dir"
+      
+      echo "📁 Backup created: \$backup_dir"
+      
+      # Log the uninstallation
+      echo "$(date): Package uninstallation initiated" >> .{name}/logs/install.log
+      echo "$(date): Backup created at \$backup_dir" >> .{name}/logs/install.log
+    fi
+    
+    # Check for active processes or dependencies
+    if pgrep -f "{name}" > /dev/null; then
+      echo "⚠️  Warning: Found running processes related to {name}"
+      echo "   You may want to stop them before uninstalling"
+    fi
+  
+  postUninstall: |
+    echo "✅ Complex package has been uninstalled"
+    echo ""
+    echo "💾 Data backup information:"
+    echo "  Your configuration and data have been backed up"
+    echo "  Look for .{name}.backup.* directories"
+    echo ""
+    echo "🧹 Manual cleanup (optional):"
+    echo "  Remove backups: rm -rf .{name}.backup.*"
+    echo "  Clear system cache: rm -rf ~/.cache/{name}"
+    echo ""
+    echo "Thank you for using Complex Package! 🚀"
+
+ignore:
+  - node_modules
+  - .git
+  - .DS_Store
+  - "*.log"
+  - "*.tmp"
+  - .env
+  - .env.local
+  - .env.*.local
+  - dist/
+  - build/
+  - coverage/
+  - .nyc_output
+  - .cache/
+  - temp/
+  - .idea/
+  - .vscode/
+  - "*.swp"
+  - "*.swo"
+  - "*~"
