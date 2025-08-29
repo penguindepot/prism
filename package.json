@@ -2,11 +2,16 @@
   "name": "prism-claude",
   "version": "0.1.0",
   "description": "Package Registry & Installation System Manager for Claude Code extensions",
-  "keywords": ["claude-code", "package-manager", "cli", "extensions"],
+  "keywords": [
+    "claude-code",
+    "package-manager",
+    "cli",
+    "extensions"
+  ],
   "author": "penguindepot",
   "license": "MIT",
   "bin": {
-    "prism": "./bin/prism"
+    "prism": "bin/prism"
   },
   "main": "./src/cli.js",
   "engines": {
@@ -36,7 +41,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/penguindepot/prism.git"
+    "url": "git+https://github.com/penguindepot/prism.git"
   },
   "homepage": "https://github.com/penguindepot/prism#readme",
   "bugs": {
