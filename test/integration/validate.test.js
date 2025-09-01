@@ -305,4 +305,152 @@ license: MIT
       }
     });
   });
+
+  describe('additional validation edge cases', () => {
+    test('should handle package with no structure definition', async () => {
+      // Create package with minimal manifest (no structure)
+      await TestUtils.createTestPackage(packageDir, {
+        name: 'minimal-package',
+        version: '1.0.0',
+        description: 'Minimal package without structure'
+      });
+
+      // Should not throw for minimal valid package
+      await expect(validate(packageDir, {})).resolves.not.toThrow();
+    });
+
+    test('should validate package with custom structure types', async () => {
+      const manifest = {
+        name: 'custom-structure-package',
+        version: '1.0.0',
+        description: 'Package with custom structure',
+        structure: {
+          custom_type: [{
+            source: 'custom/',
+            dest: '.claude/custom/{name}/',
+            pattern: '**/*.custom'
+          }]
+        }
+      };
+
+      await TestUtils.createTestPackage(packageDir, manifest, {
+        'custom/test.custom': 'Custom content'
+      });
+
+      // Should handle custom structure types
+      await expect(validate(packageDir, {})).resolves.not.toThrow();
+    });
+
+    test('should validate variant configurations', async () => {
+      const manifest = {
+        name: 'variant-package',
+        version: '1.0.0',
+        description: 'Package with variant configurations',
+        variants: {
+          minimal: {
+            description: 'Minimal installation',
+            include: ['commands/**'],
+            exclude: ['scripts/**']
+          },
+          full: {
+            description: 'Full installation',
+            include: ['**/*'],
+            exclude: ['*.tmp']
+          }
+        },
+        structure: {
+          commands: [{
+            source: 'commands/',
+            dest: '.claude/commands/{name}/',
+            pattern: '**/*.md'
+          }],
+          scripts: [{
+            source: 'scripts/',
+            dest: '.claude/scripts/{name}/',
+            pattern: '**/*.sh'
+          }]
+        }
+      };
+
+      await TestUtils.createTestPackage(packageDir, manifest, {
+        'commands/test.md': '# Test Command',
+        'scripts/test.sh': '#!/bin/bash\necho "test"'
+      });
+
+      // Should validate variant configurations
+      await expect(validate(packageDir, { variant: 'minimal' })).resolves.not.toThrow();
+      await expect(validate(packageDir, { variant: 'full' })).resolves.not.toThrow();
+    });
+
+    test('should handle invalid variant specification', async () => {
+      const manifest = {
+        name: 'variant-package',
+        version: '1.0.0',
+        description: 'Package with variants',
+        variants: {
+          standard: {
+            description: 'Standard installation'
+          }
+        }
+      };
+
+      await TestUtils.createTestPackage(packageDir, manifest);
+
+      // Should handle nonexistent variant gracefully
+      await expect(validate(packageDir, { variant: 'nonexistent' })).rejects.toThrow();
+    });
+
+    test('should validate package with dependencies', async () => {
+      const manifest = {
+        name: 'dependent-package',
+        version: '1.0.0',
+        description: 'Package with dependencies',
+        dependencies: {
+          'other-package': '^1.0.0',
+          'another-dependency': '2.x'
+        }
+      };
+
+      await TestUtils.createTestPackage(packageDir, manifest);
+
+      // Should validate package with dependencies
+      await expect(validate(packageDir, {})).resolves.not.toThrow();
+    });
+
+    test('should handle package with empty directories', async () => {
+      const manifest = {
+        name: 'empty-dirs-package',
+        version: '1.0.0',
+        description: 'Package with empty directories',
+        structure: {
+          commands: [{
+            source: 'commands/',
+            dest: '.claude/commands/{name}/',
+            pattern: '**/*.md'
+          }]
+        }
+      };
+
+      await TestUtils.createTestPackage(packageDir, manifest);
+      
+      // Create empty directory
+      await fs.ensureDir(join(packageDir, 'commands'));
+
+      // Should handle empty directories
+      await expect(validate(packageDir, {})).resolves.not.toThrow();
+    });
+
+    test('should validate package with special characters in name', async () => {
+      const manifest = {
+        name: 'special-chars-package_123',
+        version: '1.0.0',
+        description: 'Package with special characters in name'
+      };
+
+      await TestUtils.createTestPackage(packageDir, manifest);
+
+      // Should handle special characters in package names
+      await expect(validate(packageDir, {})).resolves.not.toThrow();
+    });
+  });
 });

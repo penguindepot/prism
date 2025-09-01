@@ -141,7 +141,7 @@ class PackageManager {
   /**
    * Uninstall a package
    */
-  async uninstallPackage(packageName, options = {}) {
+  async uninstallPackage(packageName, _options = {}) {
     logger.info(`🗑️  Uninstalling ${packageName}...`);
 
     try {
@@ -419,7 +419,7 @@ This file configures Claude Code's behavior for this project.
     }
   }
 
-  async checkConflicts(manifest, variant) {
+  async checkConflicts(manifest, _variant) {
     const config = await this.getConfig();
     
     // Check if package is already installed
@@ -547,7 +547,7 @@ This file configures Claude Code's behavior for this project.
     return this.fetchLocalManifest(tempDir);
   }
 
-  async fetchRegistryManifest(name, version) {
+  async fetchRegistryManifest(_name, _version) {
     // Placeholder for registry implementation
     throw new PrismError('Registry packages not yet implemented');
   }

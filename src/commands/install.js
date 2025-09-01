@@ -1,4 +1,3 @@
-import inquirer from 'inquirer';
 import PackageManager from '../core/package-manager.js';
 import logger from '../utils/logger.js';
 

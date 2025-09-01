@@ -7,7 +7,6 @@ import fetch from 'node-fetch';
 
 import logger from '../utils/logger.js';
 import { PrismError } from '../utils/errors.js';
-import ManifestParser from './manifest-parser.js';
 
 class FileManager {
   constructor(projectRoot) {
@@ -32,8 +31,8 @@ class FileManager {
     }
 
     // Process each structure type (commands, scripts, rules, etc.)
-    for (const [structureType, items] of Object.entries(manifest.structure)) {
-      if (structureType === 'claude_config') {
+    for (const [_structureType, items] of Object.entries(manifest.structure)) {
+      if (_structureType === 'claude_config') {
         // Special handling for CLAUDE.md content
         for (const item of items) {
           await this.appendToClaudeMd(packagePath, item, variantConfig, manifest.name);
@@ -98,7 +97,7 @@ class FileManager {
     const sourcePath = path.join(packagePath, item.source);
     
     // Check if the package CLAUDE file should be included based on variant
-    const relativePath = item.source + item.pattern;
+    const _relativePath = item.source + item.pattern;
     const files = this.filterFilesByVariant([item.pattern], variantConfig, item.source);
     
     if (files.length === 0) {
@@ -123,7 +122,7 @@ class FileManager {
     
     // Ensure CLAUDE.md exists
     if (!await fs.pathExists(claudeMdPath)) {
-      logger.warn(`⚠️  CLAUDE.md not found, creating base file`);
+      logger.warn('⚠️  CLAUDE.md not found, creating base file');
       await this.createBaseClaude(claudeMdPath);
     }
     
@@ -389,10 +388,10 @@ This file configures Claude Code's behavior for this project.
       }
       // Convert string to packageInfo object for other URL types
       if (url.startsWith('https://github.com/')) {
-        const match = url.match(/github\.com\/([^\/]+\/[^\/]+)/);
+        const match = url.match(/github\.com\/([^/]+\/[^/]+)/);
         packageInfo = { type: 'github', repo: match[1] };
       } else if (url.startsWith('https://gitlab.com/')) {
-        const match = url.match(/gitlab\.com\/([^\/]+\/[^\/]+)/);
+        const match = url.match(/gitlab\.com\/([^/]+\/[^/]+)/);
         packageInfo = { type: 'gitlab', repo: match[1] };
       } else {
         packageInfo = { type: 'git', url };
@@ -587,7 +586,7 @@ This file configures Claude Code's behavior for this project.
     }
 
     // Include files based on structure definition
-    for (const [structureType, items] of Object.entries(manifest.structure)) {
+    for (const [_structureType, items] of Object.entries(manifest.structure)) {
       for (const item of items) {
         const sourcePath = path.join(sourceDir, item.source);
         
@@ -644,7 +643,7 @@ This file configures Claude Code's behavior for this project.
     let removedCount = 0;
 
     // Process each structure type (commands, scripts, rules, etc.)
-    for (const [structureType, items] of Object.entries(manifest.structure)) {
+    for (const [_structureType, items] of Object.entries(manifest.structure)) {
       for (const item of items) {
         // Resolve destination path (replace {name} placeholder)
         const destPath = this.resolveDestPath(item.dest, manifest);
@@ -680,7 +679,7 @@ This file configures Claude Code's behavior for this project.
     const errors = [];
 
     // Check that source paths with files exist
-    for (const [structureType, items] of Object.entries(manifest.structure)) {
+    for (const [_structureType, items] of Object.entries(manifest.structure)) {
       for (const item of items) {
         const sourcePath = path.join(packageDir, item.source);
         if (await fs.pathExists(sourcePath)) {

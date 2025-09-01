@@ -344,4 +344,228 @@ describe('FileManager', () => {
       expect(resolved).toBe('.claude/static/path/');
     });
   });
+
+  describe('appendToClaudeMd', () => {
+    test('should append package content to CLAUDE.md when it exists', async () => {
+      // Create existing CLAUDE.md
+      const claudeMdPath = join(targetDir, '.claude', 'CLAUDE.md');
+      await fs.ensureDir(join(targetDir, '.claude'));
+      await fs.writeFile(claudeMdPath, '# Existing CLAUDE.md\n\nExisting content.\n');
+
+      // Create package with CLAUDE content
+      const packagePath = join(sourceDir, 'test-package');
+      await fs.ensureDir(packagePath);
+      await fs.writeFile(join(packagePath, 'test-package.md'), '# Test Package\n\nThis is test package content.\n');
+
+      const item = {
+        source: '',
+        pattern: 'test-package.md'
+      };
+
+      const variantConfig = {
+        include: ['**/*'],
+        exclude: []
+      };
+
+      await fileManager.appendToClaudeMd(packagePath, item, variantConfig, 'test-package');
+
+      // Check that content was appended
+      const claudeContent = await fs.readFile(claudeMdPath, 'utf8');
+      expect(claudeContent).toContain('# Test Package');
+      expect(claudeContent).toContain('This is test package content.');
+      expect(claudeContent).toContain('Existing content');
+    });
+
+    test('should create CLAUDE.md if it does not exist', async () => {
+      const claudeMdPath = join(targetDir, '.claude', 'CLAUDE.md');
+      
+      // Ensure CLAUDE.md doesn't exist
+      expect(await fs.pathExists(claudeMdPath)).toBe(false);
+
+      // Create package with CLAUDE content
+      const packagePath = join(sourceDir, 'test-package');
+      await fs.ensureDir(packagePath);
+      await fs.writeFile(join(packagePath, 'test-package.md'), '# Test Package\n\nNew package content.\n');
+
+      const item = {
+        source: '',
+        pattern: 'test-package.md'
+      };
+
+      const variantConfig = {
+        include: ['**/*'],
+        exclude: []
+      };
+
+      await fileManager.appendToClaudeMd(packagePath, item, variantConfig, 'test-package');
+
+      // Check that CLAUDE.md was created with content
+      expect(await fs.pathExists(claudeMdPath)).toBe(true);
+      const claudeContent = await fs.readFile(claudeMdPath, 'utf8');
+      expect(claudeContent).toContain('# Test Package');
+      expect(claudeContent).toContain('New package content.');
+    });
+
+    test('should skip when files are excluded by variant', async () => {
+      const claudeMdPath = join(targetDir, '.claude', 'CLAUDE.md');
+      await fs.ensureDir(join(targetDir, '.claude'));
+      await fs.writeFile(claudeMdPath, '# Original content\n');
+
+      // Create package content
+      const packagePath = join(sourceDir, 'test-package');
+      await fs.ensureDir(packagePath);
+      await fs.writeFile(join(packagePath, 'test-package.md'), '# Should be excluded\n');
+
+      const item = {
+        source: '',
+        pattern: 'test-package.md'
+      };
+
+      // Variant config that excludes this file
+      const variantConfig = {
+        include: [],
+        exclude: ['**/*']
+      };
+
+      await fileManager.appendToClaudeMd(packagePath, item, variantConfig, 'test-package');
+
+      // Content should not be appended
+      const claudeContent = await fs.readFile(claudeMdPath, 'utf8');
+      expect(claudeContent).toBe('# Original content\n');
+      expect(claudeContent).not.toContain('Should be excluded');
+    });
+
+    test('should warn when no CLAUDE config file found', async () => {
+      const packagePath = join(sourceDir, 'test-package');
+      await fs.ensureDir(packagePath);
+      // Don't create the expected file
+
+      const item = {
+        source: '',
+        pattern: 'nonexistent.md'
+      };
+
+      const variantConfig = {
+        include: ['**/*'],
+        exclude: []
+      };
+
+      // Should not throw, just warn
+      await expect(async () => {
+        await fileManager.appendToClaudeMd(packagePath, item, variantConfig, 'test-package');
+      }).not.toThrow();
+    });
+  });
+
+  describe('removePackageFiles', () => {
+    test('should remove files based on manifest structure', async () => {
+      // Create installed package files
+      const commandsDir = join(targetDir, '.claude', 'commands', 'test-package');
+      const scriptsDir = join(targetDir, '.claude', 'scripts', 'test-package');
+      
+      await fs.ensureDir(commandsDir);
+      await fs.ensureDir(scriptsDir);
+      await fs.writeFile(join(commandsDir, 'test.md'), '# Test Command');
+      await fs.writeFile(join(scriptsDir, 'test.sh'), '#!/bin/bash\necho "test"');
+
+      const manifest = {
+        name: 'test-package',
+        structure: {
+          commands: [{
+            source: 'commands/',
+            dest: '.claude/commands/{name}/',
+            pattern: '**/*.md'
+          }],
+          scripts: [{
+            source: 'scripts/',
+            dest: '.claude/scripts/{name}/',
+            pattern: '**/*.sh'
+          }]
+        }
+      };
+
+      const packageInfo = {
+        version: '1.0.0',
+        manifest: manifest
+      };
+
+      await fileManager.removePackageFiles('test-package', packageInfo);
+
+      // Check that package directories were removed
+      expect(await fs.pathExists(commandsDir)).toBe(false);
+      expect(await fs.pathExists(scriptsDir)).toBe(false);
+    });
+
+    test('should handle missing directories gracefully', async () => {
+      const manifest = {
+        name: 'nonexistent-package',
+        structure: {
+          commands: [{
+            source: 'commands/',
+            dest: '.claude/commands/{name}/',
+            pattern: '**/*.md'
+          }]
+        }
+      };
+
+      const packageInfo = {
+        version: '1.0.0',
+        manifest: manifest
+      };
+
+      // Should not throw even if directories don't exist
+      await expect(async () => {
+        await fileManager.removePackageFiles('nonexistent-package', packageInfo);
+      }).not.toThrow();
+    });
+
+    test('should remove CLAUDE.md package sections', async () => {
+      const claudeMdPath = join(targetDir, '.claude', 'CLAUDE.md');
+      await fs.ensureDir(join(targetDir, '.claude'));
+      
+      // Create CLAUDE.md with package sections
+      const claudeContent = `# Main Project
+
+Existing content.
+
+# ==========================================
+# PRISM Package Configurations
+# ==========================================
+
+# test-package
+Package content here.
+
+# another-package
+Other package content.
+`;
+      
+      await fs.writeFile(claudeMdPath, claudeContent);
+
+      const manifest = {
+        name: 'test-package',
+        structure: {
+          claude_config: [{
+            source: '',
+            dest: '.claude/',
+            pattern: 'test-package.md'
+          }]
+        }
+      };
+
+      const packageInfo = {
+        version: '1.0.0',
+        manifest: manifest
+      };
+
+      await fileManager.removePackageFiles('test-package', packageInfo);
+
+      // Check that only test-package section was removed
+      const updatedContent = await fs.readFile(claudeMdPath, 'utf8');
+      expect(updatedContent).toContain('# another-package');
+      expect(updatedContent).toContain('Other package content');
+      expect(updatedContent).not.toContain('# test-package');
+      expect(updatedContent).not.toContain('Package content here');
+      expect(updatedContent).toContain('Existing content');
+    });
+  });
 });

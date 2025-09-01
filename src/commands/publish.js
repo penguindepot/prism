@@ -1,6 +1,5 @@
 import path from 'path';
 import fs from 'fs-extra';
-import ManifestParser from '../core/manifest-parser.js';
 import logger from '../utils/logger.js';
 
 async function publish(packageFile, options) {

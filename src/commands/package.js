@@ -1,7 +1,6 @@
 import path from 'path';
 import fs from 'fs-extra';
 import chalk from 'chalk';
-import PackageManager from '../core/package-manager.js';
 import ManifestParser from '../core/manifest-parser.js';
 import FileManager from '../core/file-manager.js';
 import logger from '../utils/logger.js';

@@ -330,7 +330,7 @@ async function validateVariants(manifest, sourceDir) {
     
     // Check if variant patterns match actual files
     let foundFiles = false;
-    for (const [structureType, items] of Object.entries(manifest.structure)) {
+    for (const [_structureType, items] of Object.entries(manifest.structure)) {
       for (const item of items) {
         const sourcePath = path.join(sourceDir, item.source);
         if (await fs.pathExists(sourcePath)) {
