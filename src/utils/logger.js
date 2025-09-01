@@ -173,6 +173,11 @@ class Logger {
   command(cmd) {
     return this.colorEnabled ? chalk.yellow(cmd) : cmd;
   }
+
+  // Format highlighted text consistently
+  highlight(text) {
+    return this.colorEnabled ? chalk.bold.cyan(text) : text;
+  }
 }
 
 // Create and export singleton instance
