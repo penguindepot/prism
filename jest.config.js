@@ -5,6 +5,9 @@ export default {
   // Test environment
   testEnvironment: 'node',
   
+  // Set NODE_ENV for tests
+  setupFiles: ['<rootDir>/test/env-setup.js'],
+  
   // Test file patterns
   testMatch: [
     '**/test/**/*.test.js'
@@ -29,10 +32,10 @@ export default {
   // Coverage thresholds (reasonable starting point)
   coverageThreshold: {
     global: {
-      branches: 36,
+      branches: 40,
       functions: 40,  
-      lines: 38,
-      statements: 38
+      lines: 40,
+      statements: 40
     }
   },
   
@@ -47,6 +50,9 @@ export default {
   
   // Test timeout
   testTimeout: 30000,
+  
+  // Run tests serially to avoid directory conflicts
+  maxWorkers: 1,
   
   // Globals for Node environment
   globals: {
