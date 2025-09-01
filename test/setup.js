@@ -4,11 +4,12 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 
 // Create a global test directory for all tests
-global.TEST_DIR = join(tmpdir(), 'prism-tests');
+const BASE_TEST_DIR = join(tmpdir(), 'prism-tests');
+global.TEST_DIR = BASE_TEST_DIR;
 
 beforeEach(async () => {
-  // Clean up test directory before each test
-  await fs.remove(global.TEST_DIR);
+  // Ensure base test directory exists but don't remove it
+  // Each test should create its own unique subdirectory
   await fs.ensureDir(global.TEST_DIR);
 });
 
