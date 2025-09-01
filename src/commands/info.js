@@ -134,7 +134,7 @@ async function info(packageSpec, options) {
       }
 
       // Show versions if requested
-      if (options.versions) {
+      if (options && options.versions) {
         logger.info(chalk.bold('Available Versions:'));
         logger.info('🚧 Version history not yet implemented');
         logger.info('');
@@ -180,8 +180,13 @@ async function info(packageSpec, options) {
       logger.info('💡 The package manifest has validation errors');
     }
     
-    if (options.verbose) {
+    if (options && options.verbose) {
       logger.error(error.stack);
+    }
+    
+    // In test environment, throw the error instead of exiting
+    if (process.env.NODE_ENV === 'test') {
+      throw error;
     }
     
     process.exit(1);

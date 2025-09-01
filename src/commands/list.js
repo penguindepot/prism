@@ -90,6 +90,11 @@ async function list(options) {
       logger.error(error.stack);
     }
     
+    // In test environment, throw the error instead of exiting
+    if (process.env.NODE_ENV === 'test') {
+      throw error;
+    }
+    
     process.exit(1);
   }
 }

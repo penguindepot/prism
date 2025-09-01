@@ -21,7 +21,7 @@ async function install(packageSpec, options) {
     logger.title(`Installing ${logger.package(packageSpec)}`);
     
     // Show dry run message if applicable
-    if (options.dryRun) {
+    if (options && options.dryRun) {
       logger.info('🔍 Dry run mode - no changes will be made');
       logger.info('');
     }
@@ -31,15 +31,15 @@ async function install(packageSpec, options) {
 
     try {
       const manifest = await packageManager.installPackage(packageSpec, {
-        variant: options.variant,
-        dryRun: options.dryRun,
-        save: options.save,
-        global: options.global
+        variant: options && options.variant,
+        dryRun: options && options.dryRun,
+        save: options && options.save,
+        global: options && options.global
       });
 
       spinner.stop();
 
-      if (options.dryRun) {
+      if (options && options.dryRun) {
         logger.success('✅ Dry run completed - package would install successfully');
         return;
       }
@@ -80,8 +80,13 @@ async function install(packageSpec, options) {
       logger.info('💡 Resolve conflicts or use --force to override');
     }
     
-    if (options.verbose) {
+    if (options && options.verbose) {
       logger.error(error.stack);
+    }
+    
+    // In test environment, throw the error instead of exiting
+    if (process.env.NODE_ENV === 'test') {
+      throw error;
     }
     
     process.exit(1);
