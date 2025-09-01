@@ -1,0 +1,129 @@
+# Git Toolkit Package for PRISM
+name: git-toolkit
+version: 1.0.0
+description: Advanced Git workflow automation tools for Claude Code
+author: Git Toolkit Contributors
+license: MIT
+repository: github.com/example/git-toolkit
+keywords:
+  - git
+  - workflow
+  - automation
+  - claude-code
+  - version-control
+
+# Claude Code compatibility
+claudeCode:
+  minVersion: "1.0.0"
+
+# Package file structure
+structure:
+  commands:
+    - source: .claude/commands/git-toolkit/
+      dest: .claude/commands/git-toolkit/
+      pattern: "**/*.md"
+  
+  scripts:
+    - source: .claude/scripts/git-toolkit/
+      dest: .claude/scripts/git-toolkit/
+      pattern: "**/*.sh"
+  
+  rules:
+    - source: .claude/rules/git-toolkit/
+      dest: .claude/rules/git-toolkit/
+      pattern: "*.md"
+  
+  agents:
+    - source: .claude/agents/
+      dest: .claude/agents/
+      pattern: "git-toolkit-*.md"
+  
+  documentation:
+    - source: .claude/docs/git-toolkit/
+      dest: .claude/docs/git-toolkit/
+      pattern: "**/*.md"
+  
+  claude_config:
+    - source: .claude/
+      dest: .claude/
+      pattern: "git-toolkit.md"
+
+# Installation variants
+variants:
+  minimal:
+    description: Basic git commands only
+    include:
+      - ".claude/commands/git-toolkit/status.md"
+      - ".claude/commands/git-toolkit/commit.md"
+      - ".claude/scripts/git-toolkit/commit-helper.sh"
+      - ".claude/git-toolkit.md"
+    exclude:
+      - ".claude/commands/git-toolkit/advanced/*"
+      - ".claude/agents/*"
+  
+  standard:
+    description: Standard git workflow tools
+    include:
+      - ".claude/commands/git-toolkit/*"
+      - ".claude/scripts/git-toolkit/*"
+      - ".claude/rules/git-toolkit/*"
+      - ".claude/docs/git-toolkit/*"
+      - ".claude/git-toolkit.md"
+    exclude:
+      - ".claude/commands/git-toolkit/experimental/*"
+      - ".claude/agents/*"
+  
+  full:
+    description: Complete toolkit with agents and experimental features
+    include:
+      - "**/*"
+
+# Dependencies
+dependencies:
+  system:
+    - name: git
+      required: true
+      version: ">=2.30.0"
+    
+    - name: gh
+      required: false
+      install: "brew install gh || apt-get install gh"
+      description: "GitHub CLI for GitHub integration"
+
+# Lifecycle hooks
+hooks:
+  preInstall: |
+    echo "🚀 Installing Git Toolkit..."
+    echo "📦 Variant: ${PRISM_VARIANT:-standard}"
+    
+    if ! git --version > /dev/null 2>&1; then
+      echo "❌ Git is required but not installed"
+      exit 1
+    fi
+  
+  postInstall: |
+    echo ""
+    echo "✅ Git Toolkit installed successfully!"
+    echo ""
+    echo "📋 Available commands:"
+    echo "  /git-toolkit:status - Enhanced git status"
+    echo "  /git-toolkit:commit - Smart commit helper"
+    echo "  /git-toolkit:branch - Branch management"
+    echo ""
+    echo "📚 Documentation: .claude/docs/git-toolkit/"
+    echo "🤖 Agents: git-toolkit-conflict-resolver, git-toolkit-history-analyzer"
+  
+  preUninstall: |
+    echo "🗑️  Uninstalling Git Toolkit..."
+  
+  postUninstall: |
+    echo "✅ Git Toolkit has been uninstalled"
+
+# Files to ignore when packaging
+ignore:
+  - .git
+  - node_modules
+  - "*.log"
+  - .DS_Store
+  - test/
+  - examples/

@@ -33,8 +33,15 @@ class FileManager {
 
     // Process each structure type (commands, scripts, rules, etc.)
     for (const [structureType, items] of Object.entries(manifest.structure)) {
-      for (const item of items) {
-        await this.installStructureItem(packagePath, item, variantConfig, manifest.name);
+      if (structureType === 'claude_config') {
+        // Special handling for CLAUDE.md content
+        for (const item of items) {
+          await this.appendToClaudeMd(packagePath, item, variantConfig, manifest.name);
+        }
+      } else {
+        for (const item of items) {
+          await this.installStructureItem(packagePath, item, variantConfig, manifest.name);
+        }
       }
     }
   }
@@ -82,6 +89,108 @@ class FileManager {
     if (includedFiles.length > 0) {
       logger.step(`Installed ${includedFiles.length} files to ${logger.path(destPath)}`);
     }
+  }
+
+  /**
+   * Append package CLAUDE.md content to main CLAUDE.md
+   */
+  async appendToClaudeMd(packagePath, item, variantConfig, packageName) {
+    const sourcePath = path.join(packagePath, item.source);
+    
+    // Check if the package CLAUDE file should be included based on variant
+    const relativePath = item.source + item.pattern;
+    const files = this.filterFilesByVariant([item.pattern], variantConfig, item.source);
+    
+    if (files.length === 0) {
+      logger.debug(`Skipping CLAUDE.md append for ${packageName} (excluded by variant)`);
+      return;
+    }
+    
+    // Find the source file
+    const pattern = item.pattern || `${packageName}.md`;
+    const sourceFiles = await glob(pattern, {
+      cwd: sourcePath,
+      nodir: true
+    });
+    
+    if (sourceFiles.length === 0) {
+      logger.warn(`⚠️  No CLAUDE configuration file found for ${packageName}`);
+      return;
+    }
+    
+    const sourceFile = path.join(sourcePath, sourceFiles[0]);
+    const claudeMdPath = path.join(this.projectRoot, '.claude', 'CLAUDE.md');
+    
+    // Ensure CLAUDE.md exists
+    if (!await fs.pathExists(claudeMdPath)) {
+      logger.warn(`⚠️  CLAUDE.md not found, creating base file`);
+      await this.createBaseClaude(claudeMdPath);
+    }
+    
+    // Read the package's CLAUDE content
+    const packageContent = await fs.readFile(sourceFile, 'utf-8');
+    
+    // Read existing CLAUDE.md
+    let existingContent = await fs.readFile(claudeMdPath, 'utf-8');
+    
+    // Check if this package's content is already present
+    const packageMarker = `# Package: ${packageName}`;
+    if (existingContent.includes(packageMarker)) {
+      logger.info(`📝 Package ${packageName} configuration already in CLAUDE.md, updating...`);
+      // Remove old content and re-add
+      const startMarker = packageMarker;
+      const endMarker = `# End Package: ${packageName}`;
+      const startIndex = existingContent.indexOf(startMarker);
+      const endIndex = existingContent.indexOf(endMarker);
+      
+      if (startIndex !== -1 && endIndex !== -1) {
+        existingContent = existingContent.substring(0, startIndex) + 
+                         existingContent.substring(endIndex + endMarker.length);
+      }
+    }
+    
+    // Append the new content with markers
+    const contentToAppend = `
+${packageMarker}
+${packageContent}
+# End Package: ${packageName}
+`;
+    
+    await fs.writeFile(claudeMdPath, existingContent + contentToAppend);
+    logger.step(`📝 Appended ${packageName} configuration to CLAUDE.md`);
+  }
+  
+  /**
+   * Create base CLAUDE.md file
+   */
+  async createBaseClaude(claudeMdPath) {
+    const baseContent = `# CLAUDE.md - Project Configuration
+
+This file configures Claude Code's behavior for this project.
+
+## Project Context
+
+> Add your project-specific context and guidelines here.
+
+## Coding Standards
+
+> Define your project's coding standards and conventions.
+
+## Tone and Behavior
+
+> Specify how Claude should interact and communicate.
+
+# ==========================================
+# PRISM Package Configurations
+# ==========================================
+# The sections below are automatically managed by PRISM
+# when packages are installed or uninstalled.
+# DO NOT EDIT BELOW THIS LINE MANUALLY
+
+`;
+    
+    await fs.ensureDir(path.dirname(claudeMdPath));
+    await fs.writeFile(claudeMdPath, baseContent);
   }
 
   /**
@@ -179,6 +288,9 @@ class FileManager {
   async removePackageFiles(packageName, packageInfo) {
     logger.info(`🗑️  Removing files for package: ${packageName}`);
 
+    // Remove package content from CLAUDE.md
+    await this.removeFromClaudeMd(packageName);
+
     if (!packageInfo.files) {
       logger.warn('⚠️  No file list found for package, cannot remove files cleanly');
       return;
@@ -200,6 +312,39 @@ class FileManager {
     await this.removeEmptyDirectories(packageInfo.directories || []);
 
     logger.step(`Removed ${removedCount} files`);
+  }
+  
+  /**
+   * Remove package content from CLAUDE.md
+   */
+  async removeFromClaudeMd(packageName) {
+    const claudeMdPath = path.join(this.projectRoot, '.claude', 'CLAUDE.md');
+    
+    if (!await fs.pathExists(claudeMdPath)) {
+      return; // No CLAUDE.md to clean up
+    }
+    
+    let content = await fs.readFile(claudeMdPath, 'utf-8');
+    
+    // Remove package content between markers
+    const startMarker = `# Package: ${packageName}`;
+    const endMarker = `# End Package: ${packageName}`;
+    const startIndex = content.indexOf(startMarker);
+    const endIndex = content.indexOf(endMarker);
+    
+    if (startIndex !== -1 && endIndex !== -1) {
+      // Also remove the newline before the start marker if it exists
+      let actualStart = startIndex;
+      if (startIndex > 0 && content[startIndex - 1] === '\n') {
+        actualStart = startIndex - 1;
+      }
+      
+      content = content.substring(0, actualStart) + 
+                content.substring(endIndex + endMarker.length);
+      
+      await fs.writeFile(claudeMdPath, content);
+      logger.step(`📝 Removed ${packageName} configuration from CLAUDE.md`);
+    }
   }
 
   /**

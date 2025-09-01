@@ -244,7 +244,7 @@ class ManifestParser {
       throw new ValidationError('Package must define file structure');
     }
 
-    const validTypes = ['commands', 'scripts', 'rules', 'data', 'templates'];
+    const validTypes = ['commands', 'scripts', 'rules', 'data', 'templates', 'agents', 'documentation', 'claude_config'];
     
     for (const [type, items] of Object.entries(manifest.structure)) {
       if (!validTypes.includes(type)) {
