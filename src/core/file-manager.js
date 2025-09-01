@@ -20,9 +20,15 @@ class FileManager {
   async installFiles(packagePath, manifest, variant) {
     logger.info(`📁 Installing files for variant: ${variant}`);
 
-    const variantConfig = manifest.variants[variant];
+    let variantConfig = manifest.variants && manifest.variants[variant];
     if (!variantConfig) {
-      throw new PrismError(`Variant "${variant}" not found in package`);
+      // If variant doesn't exist, fall back to a default that includes everything
+      logger.warn(`⚠️  Variant "${variant}" not found, installing all files`);
+      variantConfig = {
+        description: 'Default installation - all files',
+        include: ['**/*'],
+        exclude: []
+      };
     }
 
     // Process each structure type (commands, scripts, rules, etc.)
@@ -57,7 +63,7 @@ class FileManager {
       ignore: item.exclude || []
     });
 
-    // Filter files based on variant include/exclude patterns
+    // Filter files based on variant include/exclude patterns (use source path for filtering)
     const includedFiles = this.filterFilesByVariant(files, variantConfig, item.source);
 
     logger.debug(`Installing ${includedFiles.length} files from ${item.source} to ${item.dest}`);
@@ -85,37 +91,86 @@ class FileManager {
     const includePatterns = variantConfig.include || ['**/*'];
     const excludePatterns = variantConfig.exclude || [];
 
+    logger.debug(`Filtering ${files.length} files with variant patterns:`);
+    logger.debug(`  Include: ${includePatterns.join(', ')}`);
+    logger.debug(`  Exclude: ${excludePatterns.join(', ')}`);
+    logger.debug(`  Base path: ${basePath}`);
+
     return files.filter(file => {
-      const relativeFile = path.join(basePath, file);
+      // The file path relative to the project root (how it appears after installation)
+      const projectRelativeFile = path.join(basePath, file);
+      
+      // Normalize path separators
+      const normalizedFile = projectRelativeFile.replace(/\\/g, '/');
       
       // Check include patterns
-      const included = includePatterns.some(pattern => 
-        this.matchesPattern(relativeFile, pattern)
-      );
+      const included = includePatterns.some(pattern => {
+        const normalizedPattern = pattern.replace(/\\/g, '/');
+        const matches = this.matchesPattern(normalizedFile, normalizedPattern);
+        logger.debug(`  Checking include "${normalizedFile}" vs "${normalizedPattern}": ${matches}`);
+        return matches;
+      });
       
-      if (!included) return false;
+      if (!included) {
+        logger.debug(`  File excluded by include patterns: ${normalizedFile}`);
+        return false;
+      }
       
       // Check exclude patterns
-      const excluded = excludePatterns.some(pattern => 
-        this.matchesPattern(relativeFile, pattern)
-      );
+      const excluded = excludePatterns.some(pattern => {
+        const normalizedPattern = pattern.replace(/\\/g, '/');
+        const matches = this.matchesPattern(normalizedFile, normalizedPattern);
+        logger.debug(`  Checking exclude "${normalizedFile}" vs "${normalizedPattern}": ${matches}`);
+        return matches;
+      });
       
-      return !excluded;
+      if (excluded) {
+        logger.debug(`  File excluded by exclude patterns: ${normalizedFile}`);
+        return false;
+      }
+      
+      logger.debug(`  File included: ${normalizedFile}`);
+      return true;
     });
   }
 
   /**
-   * Simple glob pattern matching
+   * Improved glob pattern matching
    */
   matchesPattern(filePath, pattern) {
-    // Convert glob pattern to regex (simplified)
-    const regexPattern = pattern
-      .replace(/\*\*/g, '.*')
-      .replace(/\*/g, '[^/]*')
-      .replace(/\?/g, '[^/]');
+    // Normalize both paths
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    const normalizedPattern = pattern.replace(/\\/g, '/');
     
-    const regex = new RegExp(`^${regexPattern}$`);
-    return regex.test(filePath);
+    // Handle special cases
+    if (normalizedPattern === '**/*' || normalizedPattern === '**') {
+      return true;
+    }
+    
+    // Convert glob pattern to regex with better handling
+    let regexPattern = normalizedPattern
+      // Escape special regex chars except glob chars
+      .replace(/[.+^${}()|[\]]/g, '\\$&')
+      // Handle ** (matches any number of directories)
+      .replace(/\*\*/g, '§DOUBLESTAR§')
+      // Handle * (matches any chars except /)
+      .replace(/\*/g, '[^/]*')
+      // Handle ? (matches any single char except /)
+      .replace(/\?/g, '[^/]')
+      // Restore ** as .*
+      .replace(/§DOUBLESTAR§/g, '.*');
+    
+    // If pattern doesn't end with * or **, make it exact match
+    if (!pattern.includes('*')) {
+      regexPattern = `^${regexPattern}$`;
+    } else {
+      regexPattern = `^${regexPattern}$`;
+    }
+    
+    const regex = new RegExp(regexPattern);
+    const matches = regex.test(normalizedPath);
+    
+    return matches;
   }
 
   /**

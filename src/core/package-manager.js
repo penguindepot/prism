@@ -102,6 +102,12 @@ class PackageManager {
       // Select variant
       const variant = options.variant || await this.selectVariant(manifest);
       
+      // Log variant selection
+      logger.info(`📦 Installing variant: ${logger.highlight(variant)}`);
+      if (manifest.variants && manifest.variants[variant]) {
+        logger.info(`   ${manifest.variants[variant].description}`);
+      }
+      
       // Check for conflicts
       await this.checkConflicts(manifest, variant);
       
