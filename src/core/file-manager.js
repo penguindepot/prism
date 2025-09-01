@@ -290,25 +290,73 @@ This file configures Claude Code's behavior for this project.
     // Remove package content from CLAUDE.md
     await this.removeFromClaudeMd(packageName);
 
-    if (!packageInfo.files) {
+    let removedCount = 0;
+    let directories = [];
+    
+    // If we have explicit file lists, use them
+    if (packageInfo.files) {
+      for (const filePath of packageInfo.files) {
+        const fullPath = path.join(this.projectRoot, filePath);
+        
+        if (await fs.pathExists(fullPath)) {
+          await fs.remove(fullPath);
+          removedCount++;
+          logger.debug(`  ✓ Removed ${filePath}`);
+        }
+      }
+      
+      directories = packageInfo.directories || [];
+    } 
+    // Otherwise, reconstruct from manifest
+    else if (packageInfo.manifest && packageInfo.manifest.structure) {
+      const manifest = packageInfo.manifest;
+      
+      for (const [structureType, items] of Object.entries(manifest.structure)) {
+        if (!Array.isArray(items)) continue;
+        
+        // Skip claude_config sections as they are handled by removeFromClaudeMd
+        if (structureType === 'claude_config') {
+          continue;
+        }
+        
+        for (const item of items) {
+          // Resolve destination path with variable substitution
+          let destPath = item.dest || '';
+          destPath = destPath.replace(/\{name\}/g, manifest.name);
+          
+          if (destPath) {
+            const fullDestPath = path.join(this.projectRoot, destPath);
+            
+            // Add directory to cleanup list
+            directories.push(destPath);
+            
+            // Remove all files matching the pattern in the destination
+            if (await fs.pathExists(fullDestPath)) {
+              try {
+                const files = await fs.readdir(fullDestPath, { recursive: true });
+                for (const file of files) {
+                  const filePath = path.join(fullDestPath, file);
+                  const stats = await fs.stat(filePath);
+                  if (stats.isFile()) {
+                    await fs.remove(filePath);
+                    removedCount++;
+                    logger.debug(`  ✓ Removed ${path.relative(this.projectRoot, filePath)}`);
+                  }
+                }
+              } catch (error) {
+                logger.debug(`Could not read directory ${fullDestPath}: ${error.message}`);
+              }
+            }
+          }
+        }
+      }
+    } else {
       logger.warn('⚠️  No file list found for package, cannot remove files cleanly');
       return;
     }
 
-    let removedCount = 0;
-    
-    for (const filePath of packageInfo.files) {
-      const fullPath = path.join(this.projectRoot, filePath);
-      
-      if (await fs.pathExists(fullPath)) {
-        await fs.remove(fullPath);
-        removedCount++;
-        logger.debug(`  ✓ Removed ${filePath}`);
-      }
-    }
-
     // Remove empty directories
-    await this.removeEmptyDirectories(packageInfo.directories || []);
+    await this.removeEmptyDirectories(directories);
 
     logger.step(`Removed ${removedCount} files`);
   }
@@ -325,7 +373,32 @@ This file configures Claude Code's behavior for this project.
     
     let content = await fs.readFile(claudeMdPath, 'utf-8');
     
-    // Remove package content between markers
+    // Try to remove content with the new format (# package-name)
+    const simpleMarker = `# ${packageName}`;
+    const simpleMarkerIndex = content.indexOf(simpleMarker);
+    
+    if (simpleMarkerIndex !== -1) {
+      // Find the next section (next line starting with #) or end of content
+      let nextSectionIndex = content.indexOf('\n#', simpleMarkerIndex + simpleMarker.length);
+      if (nextSectionIndex === -1) {
+        nextSectionIndex = content.length;
+      }
+      
+      // Also remove the newline before the start marker if it exists
+      let actualStart = simpleMarkerIndex;
+      if (simpleMarkerIndex > 0 && content[simpleMarkerIndex - 1] === '\n') {
+        actualStart = simpleMarkerIndex - 1;
+      }
+      
+      content = content.substring(0, actualStart) + 
+                content.substring(nextSectionIndex);
+      
+      await fs.writeFile(claudeMdPath, content);
+      logger.step(`📝 Removed ${packageName} configuration from CLAUDE.md`);
+      return;
+    }
+    
+    // Fallback: Try to remove content with the old format (# Package: name)
     const startMarker = `# Package: ${packageName}`;
     const endMarker = `# End Package: ${packageName}`;
     const startIndex = content.indexOf(startMarker);

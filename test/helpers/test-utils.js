@@ -16,6 +16,9 @@ export class TestUtils {
    * Create a test package structure
    */
   static async createTestPackage(dir, manifest, files = {}) {
+    // Ensure the directory exists first
+    await fs.ensureDir(dir);
+    
     // Write manifest file
     await fs.writeFile(
       join(dir, 'prism-package.yaml'), 
@@ -35,7 +38,7 @@ export class TestUtils {
   /**
    * Generate a manifest YAML from an object
    */
-  static createManifestYaml(manifest) {
+  static createManifestYaml(manifest = {}) {
     const defaults = {
       name: 'test-package',
       version: '1.0.0',
@@ -63,10 +66,23 @@ export class TestUtils {
       }
     };
 
-    const merged = { ...defaults, ...manifest };
+    // Deep merge function
+    const deepMerge = (target, source) => {
+      const result = { ...target };
+      for (const key in source) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          result[key] = deepMerge(target[key] || {}, source[key]);
+        } else {
+          result[key] = source[key];
+        }
+      }
+      return result;
+    };
+
+    const merged = deepMerge(defaults, manifest);
     
-    // Simple YAML generation (for complex cases, we'll use the yaml library)
-    return `name: ${merged.name}
+    // Build YAML dynamically based on what's available
+    let yaml = `name: ${merged.name}
 version: ${merged.version}
 description: ${merged.description}
 author: ${merged.author}
@@ -74,20 +90,64 @@ license: ${merged.license}
 
 claudeCode:
   minVersion: "${merged.claudeCode.minVersion}"
-
-structure:
-  commands:
-    - source: ${merged.structure.commands[0].source}
-      dest: ${merged.structure.commands[0].dest}
-  scripts:
-    - source: ${merged.structure.scripts[0].source}
-      dest: ${merged.structure.scripts[0].dest}
-
-variants:
-  default:
-    description: ${merged.variants.default.description}
-    include: ${JSON.stringify(merged.variants.default.include)}
 `;
+
+    // Add structure section if it exists
+    if (merged.structure) {
+      yaml += '\nstructure:\n';
+      
+      if (merged.structure.commands && merged.structure.commands.length > 0) {
+        yaml += '  commands:\n';
+        for (const cmd of merged.structure.commands) {
+          yaml += `    - source: ${cmd.source}\n      dest: ${cmd.dest}\n`;
+          if (cmd.pattern) {
+            yaml += `      pattern: "${cmd.pattern}"\n`;
+          }
+        }
+      }
+      
+      if (merged.structure.scripts && merged.structure.scripts.length > 0) {
+        yaml += '  scripts:\n';
+        for (const script of merged.structure.scripts) {
+          yaml += `    - source: ${script.source}\n      dest: ${script.dest}\n`;
+          if (script.pattern) {
+            yaml += `      pattern: "${script.pattern}"\n`;
+          }
+        }
+      }
+      
+      // Add other structure types dynamically
+      for (const [key, value] of Object.entries(merged.structure)) {
+        if (key !== 'commands' && key !== 'scripts' && Array.isArray(value) && value.length > 0) {
+          yaml += `  ${key}:\n`;
+          for (const item of value) {
+            yaml += `    - source: ${item.source}\n      dest: ${item.dest}\n`;
+            if (item.pattern) {
+              yaml += `      pattern: "${item.pattern}"\n`;
+            }
+          }
+        }
+      }
+    }
+
+    // Add variants section
+    if (merged.variants) {
+      yaml += '\nvariants:\n';
+      for (const [variantName, variantConfig] of Object.entries(merged.variants)) {
+        yaml += `  ${variantName}:\n`;
+        if (variantConfig.description) {
+          yaml += `    description: ${variantConfig.description}\n`;
+        }
+        if (variantConfig.include) {
+          yaml += `    include: ${JSON.stringify(variantConfig.include)}\n`;
+        }
+        if (variantConfig.exclude) {
+          yaml += `    exclude: ${JSON.stringify(variantConfig.exclude)}\n`;
+        }
+      }
+    }
+
+    return yaml;
   }
 
   /**
