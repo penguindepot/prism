@@ -303,18 +303,18 @@ class PackageManager {
   async fetchManifest(packageInfo) {
     // Implementation depends on package source type
     switch (packageInfo.type) {
-      case 'local':
-        return this.fetchLocalManifest(packageInfo.path);
-      case 'github':
-        return this.fetchGithubManifest(packageInfo.repo);
-      case 'gitlab':
-        return this.fetchGitlabManifest(packageInfo.repo);
-      case 'git':
-        return this.fetchGitManifest(packageInfo.url);
-      case 'registry':
-        return this.fetchRegistryManifest(packageInfo.name, packageInfo.version);
-      default:
-        throw new PrismError(`Unsupported package type: ${packageInfo.type}`);
+    case 'local':
+      return this.fetchLocalManifest(packageInfo.path);
+    case 'github':
+      return this.fetchGithubManifest(packageInfo.repo);
+    case 'gitlab':
+      return this.fetchGitlabManifest(packageInfo.repo);
+    case 'git':
+      return this.fetchGitManifest(packageInfo.url);
+    case 'registry':
+      return this.fetchRegistryManifest(packageInfo.name, packageInfo.version);
+    default:
+      throw new PrismError(`Unsupported package type: ${packageInfo.type}`);
     }
   }
 
@@ -394,7 +394,7 @@ class PackageManager {
     logger.info(`📋 Description: ${manifest.description}`);
     
     if (manifest.structure) {
-      logger.info(`📋 Files to install:`);
+      logger.info('📋 Files to install:');
       for (const [type, files] of Object.entries(manifest.structure)) {
         logger.info(`   ${type}: ${files.length} file(s)`);
       }
@@ -437,9 +437,9 @@ class PackageManager {
       version: manifest.version,
       variant: variant,
       source: packageInfo.type === 'local' ? packageInfo.path : 
-              packageInfo.type === 'github' ? `github:${packageInfo.repo}` :
-              packageInfo.type === 'gitlab' ? `gitlab:${packageInfo.repo}` :
-              packageInfo.name,
+        packageInfo.type === 'github' ? `github:${packageInfo.repo}` :
+          packageInfo.type === 'gitlab' ? `gitlab:${packageInfo.repo}` :
+            packageInfo.name,
       installed: new Date().toISOString(),
       manifest: manifest
     };
@@ -513,16 +513,16 @@ class PackageManager {
     await fs.ensureDir(cacheDir);
 
     switch (packageInfo.type) {
-      case 'local':
-        return packageInfo.path;
-      case 'github':
-        return this.downloadFromGithub(packageInfo.repo, cacheDir);
-      case 'gitlab':
-        return this.downloadFromGitlab(packageInfo.repo, cacheDir);
-      case 'git':
-        return this.downloadFromGit(packageInfo.url, cacheDir);
-      default:
-        throw new PrismError(`Unsupported package source: ${packageInfo.type}`);
+    case 'local':
+      return packageInfo.path;
+    case 'github':
+      return this.downloadFromGithub(packageInfo.repo, cacheDir);
+    case 'gitlab':
+      return this.downloadFromGitlab(packageInfo.repo, cacheDir);
+    case 'git':
+      return this.downloadFromGit(packageInfo.url, cacheDir);
+    default:
+      throw new PrismError(`Unsupported package source: ${packageInfo.type}`);
     }
   }
 

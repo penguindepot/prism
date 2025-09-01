@@ -200,16 +200,16 @@ class FileManager {
     }
 
     switch (packageInfo.type) {
-      case 'local':
-        return packageInfo.path;
-      case 'github':
-        return this.downloadFromGithub(packageInfo.repo, cacheDir);
-      case 'gitlab':
-        return this.downloadFromGitlab(packageInfo.repo, cacheDir);
-      case 'git':
-        return this.downloadFromGit(packageInfo.url, cacheDir);
-      default:
-        throw new PrismError(`Unsupported package source: ${packageInfo.type}`);
+    case 'local':
+      return packageInfo.path;
+    case 'github':
+      return this.downloadFromGithub(packageInfo.repo, cacheDir);
+    case 'gitlab':
+      return this.downloadFromGitlab(packageInfo.repo, cacheDir);
+    case 'git':
+      return this.downloadFromGit(packageInfo.url, cacheDir);
+    default:
+      throw new PrismError(`Unsupported package source: ${packageInfo.type}`);
     }
   }
 
