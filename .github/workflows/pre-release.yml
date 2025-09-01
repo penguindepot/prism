@@ -1,0 +1,73 @@
+name: Pre-release Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to check for release readiness (e.g., 0.1.2)'
+        required: true
+        type: string
+
+jobs:
+  pre-release-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run linter
+        run: npm run lint
+        
+      - name: Run comprehensive tests
+        run: npm run test:ci
+        
+      - name: Verify package version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+          echo "Package version: $PACKAGE_VERSION"
+          echo "Input version: $INPUT_VERSION"
+          if [ "$PACKAGE_VERSION" != "$INPUT_VERSION" ]; then
+            echo "⚠️ Warning: Package version ($PACKAGE_VERSION) doesn't match input version ($INPUT_VERSION)"
+            echo "You may need to update package.json version before creating the release"
+          else
+            echo "✅ Version verification passed"
+          fi
+        
+      - name: Validate package structure
+        run: |
+          echo "📋 Package validation:"
+          npm pack --dry-run
+          echo ""
+          echo "📦 Package contents:"
+          tar -tzf $(npm pack --silent) | head -20
+          
+      - name: Test npm publish (dry run)
+        run: npm publish --dry-run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        
+      - name: Release readiness report
+        run: |
+          echo "🚀 Release Readiness Report"
+          echo "=========================="
+          echo "✅ Linting: Passed"
+          echo "✅ Tests: Passed"
+          echo "✅ Package validation: Passed"
+          echo "✅ Publish dry-run: Passed"
+          echo ""
+          echo "📝 Next steps:"
+          echo "1. Ensure package.json version matches desired release version"
+          echo "2. Create a new GitHub release with tag v${{ github.event.inputs.version }}"
+          echo "3. The release workflow will automatically publish to npm"
