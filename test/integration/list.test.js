@@ -97,7 +97,7 @@ describe('List Command', () => {
         await list({});
       } catch (error) {
         // Expected to throw due to missing config
-        expect(error.message).toContain('1'); // Process exit code
+        expect(error.message).toContain('PRISM not initialized');
       }
     });
   });

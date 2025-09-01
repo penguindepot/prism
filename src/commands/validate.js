@@ -140,6 +140,11 @@ async function validate(directory, options = {}) {
       variantsSpinner.start();
 
       try {
+        // If a specific variant was requested, check if it exists
+        if (options.variant && !manifest.variants[options.variant]) {
+          throw new Error(`Variant '${options.variant}' not found. Available variants: ${Object.keys(manifest.variants).join(', ')}`);
+        }
+        
         await validateVariants(manifest, sourceDir);
         
         variantsSpinner.succeed('Variants: ✅ PASSED');
@@ -151,8 +156,20 @@ async function validate(directory, options = {}) {
         if (options.strict) {
           throw error;
         }
+        // Always throw for variant-specific errors, even if not strict
+        if (options.variant && !manifest.variants[options.variant]) {
+          throw error;
+        }
       }
     } else {
+      // If a variant was requested but no variants are defined
+      if (options.variant) {
+        logger.error('Variants: ❌ FAILED');
+        const error = new Error(`Variant '${options.variant}' requested but no variants are defined in this package`);
+        logger.error(`  ${error.message}`);
+        throw error;
+      }
+      
       logger.info('Variants: ⏭️  SKIPPED (no variants defined)');
       validationResults.variants = true;
     }

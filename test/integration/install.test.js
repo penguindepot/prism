@@ -62,8 +62,8 @@ describe('Install Command', () => {
         description: 'Test package'
       });
 
-      // This will likely fail but should hit the installation code paths
-      await expect(install('./test-package')).rejects.toThrow();
+      // Should successfully install the local package
+      await expect(install('./test-package')).resolves.not.toThrow();
     });
 
     test('should attempt to install from GitHub URL', async () => {
